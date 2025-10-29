@@ -1,7 +1,7 @@
 // faccio logica funzioni
 
 // Importo array
-const recipe = require("../data/recipe");
+// const recipe = require("../data/recipe");
 
 // Importiamo il file di connessione al database
 const connection = require('../data/db');
@@ -9,10 +9,13 @@ const connection = require('../data/db');
 // Index
 function index(req, res) {
     // prepariamo la query
-    // const sql = `SELECT * FROM posts`;
+    const sql = `SELECT * FROM posts`;
 
     // esecuzione della query
-
+    connection.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ error: "Database query failed" });
+        res.json(results);
+    })
 };
 
 // Show
@@ -94,27 +97,15 @@ function modify(req, res) {
 
 // Destroy
 function destroy(req, res) {
-    // Per fare una ricerca per id, forziamo l'id come numero in parse
-    // Comparazione tra id inserito nella barra di ricerca e id array
-    const ricetta = recipe.find((i) => i.id === parseInt(req.params.id));
+    // Recuperiamo id dall'URL
+    const { id } = req.params;
+    const sql = `DELETE FROM posts WHERE id = ?`
 
-    // Se non è presente l'id, diamo messaggio di errore
-    if (!ricetta) {
-        // Imposto status di errore 404
-        // Finisce la funzione e restituisce un json con le info
-        return res.status(404).json({
-            error: "Not Found",
-            message: "Ricetta non trovata"
-        })
-    }
-
-    // Rimuovere la ricetta
-    recipe.splice(recipe.indexOf(ricetta), 1);
-
-    // Controllo su terminale
-    console.log(recipe);
-    // restituire lo status corretto 204 No Content
-    res.sendStatus(204);
+    // Eliminiamo la ricetta
+    connection.query(sql, [id], (err) => {
+        if (err) return res.status(500).json({ error: `Impossibile cancellare la ricetta` });
+        res.sendStatus(204)
+    })
 }
 
 
