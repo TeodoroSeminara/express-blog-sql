@@ -20,15 +20,36 @@ function index(req, res) {
 
 // Show
 function show(req, res) {
-    const ricetta = recipe.find((i) => i.id === parseInt(req.params.id));
+    // Recuperiamo l'id dall'URL
+    const { id } = req.params
 
-    if (!ricetta) {
-        return res.status(404).json({
-            error: "Not Found",
-            message: "Ricetta non trovata"
+    // Impostiamo la prima query
+    const recipeSql = `SELECT * FROM posts WHERE id = ?`;
+
+    // Seconda query con JOIN - facendo la seconda non serve fare due join
+    const tipeSql = `
+    SELECT T.*
+    FROM tags AS T
+    JOIN post_tag AS PT ON T.id = PT.tag_id
+    WHERE PT.post_id = ?`;
+
+    // Esecuzione prima query
+    connection.query(recipeSql, [id], (err, recipeResult) => {
+        if (err) return res.status(500).json({ error: "Query not found" });
+        if (recipeResult.length === 0) return res.status(404).json({ error: "Ricetta non trovata" })
+
+        // Salviamo la ricetta
+        const recipe = recipeResult[0];
+
+        // Ececuzione seconda query se è ok la prima
+        connection.query(tipeSql, [id], (err, tipeResults) => {
+            if (err) return res.status(500).json({ error: "2nd Query not found" });
+
+            // Aggiunta tipologia ricetta
+            recipe.tipe = tipeResults;
+            res.json(recipe)
         })
-    }
-    res.json(ricetta);
+    })
 };
 
 // Store
